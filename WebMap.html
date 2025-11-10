@@ -16,34 +16,5 @@
     <button id="clickButton">Click</button>
   </div>
 </body>
-
-html,
-body,
-#viewDiv {
-  padding: 0;
-  margin: 0;
-  height: 100%;
-  width: 100%;
-}
-
-#buttonContainer {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-}
-
-require(["esri/views/MapView", "esri/WebMap"], (MapView, WebMap) => {
-  const webmap = new WebMap({
-    portalItem: {
-      id: "d4a2e2c8ea9f496187b7311f973421a6"
-    }
-  });
-
-  const view = new MapView({
-    map: webmap,
-    container: "viewDiv"
-  });
-});
-
   
 </html>
