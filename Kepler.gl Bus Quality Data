@@ -1,0 +1,51 @@
+import glob
+import json
+import os
+import pandas as pd
+from keplergl import KeplerGl
+
+# 1. Automatically find the first GeoJSON file in the 'data' folder
+geojson_files = glob.glob("data/*.geojson") + glob.glob("data/*.json")
+if not geojson_files:
+    raise FileNotFoundError("No GeoJSON file found in the 'data/' directory.")
+
+geojson_file_path = geojson_files[0]
+
+# 2. Load the GeoJSON data
+with open(geojson_file_path, "r", encoding="utf-8") as f:
+    geojson_data = json.load(f)
+
+file_name_only = os.path.splitext(os.path.basename(geojson_file_path))[0]
+layer_name = file_name_only.replace("_", " ").title()
+
+# 3. Flatten GeoJSON features into a Pandas DataFrame
+rows = []
+for feature in geojson_data.get("features", []):
+    props = feature.get("properties", {}) or {}
+    geometry = feature.get("geometry")
+    if geometry is None:
+        continue
+
+    coordinates = geometry.get("coordinates", [None, None])
+    lon, lat = (coordinates[0], coordinates[1]) if coordinates and len(coordinates) >= 2 else (None, None)
+
+    row = dict(props)
+    row["longitude"] = lon
+    row["latitude"] = lat
+    rows.append(row)
+
+df = pd.DataFrame(rows)
+
+# 4. Load optional config if 'config.json' exists in the root directory
+map_config = None
+if os.path.exists("config.json") and os.path.getsize("config.json") > 0:
+    with open("config.json", "r", encoding="utf-8") as cf:
+        map_config = json.load(cf)
+
+# 5. Initialize Kepler.gl and add data
+map_1 = KeplerGl(height=700, config=map_config)
+map_1.add_data(data=df, name=layer_name)
+
+# 6. Save directly as 'index.html' for GitHub Pages (read_only=True is best for public websites)
+map_1.save_to_html(file_name="index.html", read_only=True)
+print(f"Successfully generated index.html from {geojson_file_path}")
